@@ -1,0 +1,86 @@
+---
+- hosts: all
+  any_errors_fatal: true
+  become: yes
+  tasks:
+
+  - name: set master name
+    set_fact: master={{ groups['all'][-1] }} # -1 is due to Vagrant's generated inventory ordering
+    run_once: true
+
+  - name: install kube repo keys
+    rpm_key:
+      key: "{{ item }}"
+      state: present
+    with_items:
+    - https://packages.cloud.google.com/yum/doc/yum-key.gpg
+    - https://packages.cloud.google.com/yum/doc/rpm-package-key.gpg
+
+  - name: setup kube repo
+    yum_repository:
+      name: kubernetes
+      description: Kubernetes
+      baseurl: http://yum.kubernetes.io/repos/kubernetes-el7-x86_64
+      gpgkey: https://packages.cloud.google.com/yum/doc/yum-key.gpg https://packages.cloud.google.com/yum/doc/rpm-package-key.gpg
+      gpgcheck: true
+      repo_gpgcheck: true
+      enabled: true
+
+  - name: install docker and kube
+    yum:
+      name: "{{ item }}"
+      update_cache: true
+      state: present
+    with_items:
+    - docker
+    - kubelet
+    - kubeadm
+    - kubectl
+    - kubernetes-cni
+
+  - name: set selinux to permissive
+    selinux:
+      policy: targeted
+      state: permissive
+
+  - name: disable selinux support in docker
+    lineinfile:
+      dest: /etc/sysconfig/docker
+      regexp: "^OPTIONS="
+      line: "OPTIONS='--log-driver=journald --signature-verification=false'"
+
+  - name: use overlay for docker storage
+    lineinfile:
+      dest: /etc/sysconfig/docker-storage-setup
+      regexp: "^STORAGE_DRIVER="
+      line: "STORAGE_DRIVER=overlay"
+
+  - name: enable and start docker and kubelet
+    service:
+      name: "{{ item }}"
+      state: started
+      enabled: true
+    with_items:
+    - docker
+    - kubelet
+
+  - name: generate a kubeadm token
+    shell: cat /root/kubeadm-token || (umask 0077 && kubeadm token generate | tee /root/kubeadm-token)
+    register: kubeadm_token
+    when: inventory_hostname == master
+
+  - name: run kubeadm init on master
+    shell: kubeadm init --token {{ kubeadm_token.stdout }} --api-advertise-addresses {{ ansible_eth1.ipv4.address }}
+    when: inventory_hostname == master
+
+  - name: install calico networking
+    shell: kubectl apply -f http://docs.projectcalico.org/v2.0/getting-started/kubernetes/installation/hosted/kubeadm/calico.yaml
+    when: inventory_hostname == master
+
+  - name: install kube dashboard
+    shell: kubectl apply -f https://rawgit.com/kubernetes/dashboard/master/src/deploy/kubernetes-dashboard.yaml
+    when: inventory_hostname == master
+
+  - name: run kubeadm join on the rest
+    shell: kubeadm join --token {{ hostvars[master].kubeadm_token.stdout }} {{ hostvars[master].ansible_eth1.ipv4.address }}
+    when: inventory_hostname != master
