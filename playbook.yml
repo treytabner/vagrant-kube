@@ -69,12 +69,17 @@
     register: kubeadm_token
     when: inventory_hostname == master
 
-  - name: run kubeadm init on master
-    shell: kubeadm init --token {{ kubeadm_token.stdout }} --api-advertise-addresses {{ ansible_eth1.ipv4.address }}
-    when: inventory_hostname == master
+  - name: check if we've been deployed already
+    stat:
+      path: /etc/kubernetes/kubelet.conf
+    register: kubelet_conf
 
-  - name: install calico networking
-    shell: kubectl apply -f http://docs.projectcalico.org/v2.0/getting-started/kubernetes/installation/hosted/kubeadm/calico.yaml
+  - name: run kubeadm init on master
+    shell: kubeadm init --token {{ kubeadm_token.stdout }} --api-advertise-addresses {{ ansible_eth1.ipv4.address }} --pod-network-cidr 10.244.0.0/16
+    when: inventory_hostname == master and not kubelet_conf.stat.exists
+
+  - name: install flannel networking
+    shell: kubectl -n kube-system apply -f https://raw.githubusercontent.com/coreos/flannel/master/Documentation/kube-flannel.yml
     when: inventory_hostname == master
 
   - name: install kube dashboard
@@ -83,4 +88,12 @@
 
   - name: run kubeadm join on the rest
     shell: kubeadm join --token {{ hostvars[master].kubeadm_token.stdout }} {{ hostvars[master].ansible_eth1.ipv4.address }}
-    when: inventory_hostname != master
+    when: inventory_hostname != master and not kubelet_conf.stat.exists
+
+  - name: create web-hostname deployment
+    shell: kubectl get deploy web-hostname || kubectl run web-hostname --image=quay.io/treytabner/web-hostname --replicas=2 --port=80
+    when: inventory_hostname == master
+
+  - name: create web-hostname service
+    shell: kubectl get service web-hostname || kubectl expose deployment web-hostname --port=80 --type=NodePort
+    when: inventory_hostname == master
