@@ -25,7 +25,7 @@ Vagrant.configure("2") do |config|
   
       # We don't want to deal with the host-only interface
       node.vm.provision "shell",
-        inline: "ip route del default dev eth0"
+        inline: "ip route del default dev eth0 || true"
 
       # Only execute once the Ansible provisioner,
       # when all the nodes are up and ready.
