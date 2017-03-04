@@ -32,6 +32,10 @@ Vagrant.configure("2") do |config|
       if node_id == NUM_NODES
         node.vm.provision :ansible do |ansible|
           # Disable default limit to connect to all the nodes
+          ansible.groups = {
+            'primary' => ["node1"],
+            'workers' => (2..NUM_NODES).map { |j| "node#{j}" },
+          }
           ansible.limit = "all"
 	  ansible.verbose = "-vv"
           ansible.playbook = "playbook.yml"
