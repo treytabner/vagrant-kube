@@ -83,7 +83,7 @@
     command: kubectl apply -f https://rawgit.com/kubernetes/dashboard/master/src/deploy/kubernetes-dashboard.yaml
 
   - name: create web-hostname deployment
-    shell: kubectl get deploy web-hostname || kubectl run web-hostname --image=quay.io/treytabner/web-hostname --replicas={{ test_replicas|default(2) }} --port=80
+    shell: kubectl get deploy web-hostname || kubectl run web-hostname --image=quay.io/treytabner/web-hostname --replicas=2 --port=80
 
   - name: create web-hostname service
     shell: kubectl get service web-hostname || kubectl expose deployment web-hostname --port=80 --type=NodePort
