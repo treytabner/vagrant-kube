@@ -35,6 +35,9 @@ Vagrant.configure("2") do |config|
           ansible.groups = {
             'primary' => ["node1"],
             'workers' => (2..NUM_NODES).map { |j| "node#{j}" },
+            'primary:vars' => {
+              "test_replicas" => NUM_NODES
+            }
           }
           ansible.limit = "all"
 	  ansible.verbose = "-vv"
