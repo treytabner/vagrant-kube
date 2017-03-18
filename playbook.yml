@@ -3,7 +3,7 @@
   any_errors_fatal: true
   become: yes
   tasks:
-  - name: install kube repo keys
+  - name: install docker and kube repo keys
     rpm_key:
       key: "{{ item }}"
       state: present
@@ -21,7 +21,7 @@
       repo_gpgcheck: true
       enabled: true
 
-  - name: install docker and kube
+  - name: install docker and kube packages
     yum:
       name: "{{ item }}"
       update_cache: true
@@ -77,10 +77,19 @@
     when: not kubelet_conf.stat.exists
 
   - name: install flannel networking
-    command: kubectl -n kube-system apply -f https://raw.githubusercontent.com/coreos/flannel/master/Documentation/kube-flannel.yml
+    command: kubectl -n kube-system apply -f https://rawgit.com/coreos/flannel/master/Documentation/kube-flannel.yml
 
   - name: install kube dashboard
     command: kubectl apply -f https://rawgit.com/kubernetes/dashboard/master/src/deploy/kubernetes-dashboard.yaml
+
+  - name: install nginx ingress
+    command: kubectl apply -f https://rawgit.com/kubernetes/ingress/master/examples/deployment/nginx/kubeadm/nginx-ingress-controller.yaml
+
+  - name: install heapster rc
+    command: kubectl apply -f https://rawgit.com/kubernetes/heapster/master/deploy/kube-config/standalone/heapster-controller.yaml
+
+  - name: install heapster service
+    command: kubectl apply -f https://rawgit.com/kubernetes/heapster/master/deploy/kube-config/standalone/heapster-service.yaml
 
   - name: create web-hostname deployment
     shell: kubectl get deploy web-hostname || kubectl run web-hostname --image=quay.io/treytabner/web-hostname --replicas=2 --port=80
