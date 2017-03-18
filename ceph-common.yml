@@ -1,0 +1,16 @@
+---
+- hosts: all
+  become: yes
+  tasks:
+  - name: install ceph-common
+    yum:
+      name: ceph-common
+      update_cache: true
+      state: present
+
+- hosts: primary
+  any_errors_fatal: true
+  become: yes
+  tasks:
+  - command: kubectl label node {{ item }} node-type=storage --overwrite=true
+    with_items: "{{ groups['workers'] }}"
