@@ -1,0 +1,19 @@
+---
+- hosts: all
+  become: yes
+  tasks:
+  - name: install docker and kube repo keys
+    rpm_key:
+      key: https://yum.dockerproject.org/gpg
+      state: present
+    with_items:
+
+  - name: setup docker repo
+    yum_repository:
+      name: docker
+      description: Docker Repository
+      baseurl: https://yum.dockerproject.org/repo/main/centos/7
+      gpgkey: https://yum.dockerproject.org/gpg
+      gpgcheck: true
+      repo_gpgcheck: true
+      enabled: true
