@@ -87,6 +87,8 @@
 - hosts: primary
   any_errors_fatal: true
   become: yes
+  vars:
+    network_type: calico
   tasks:
   - name: generate a kubeadm token if needed
     shell: cat /root/kubeadm-token || (umask 0077 && kubeadm token generate | tee /root/kubeadm-token)
@@ -103,6 +105,13 @@
     - https://rawgit.com/coreos/flannel/master/Documentation/kube-flannel.yml
     environment:
       KUBECONFIG: /etc/kubernetes/admin.conf
+    when: network_type == "flannel"
+
+  - name: install calico networking
+    command: kubectl -n kube-system apply -f http://docs.projectcalico.org/v2.1/getting-started/kubernetes/installation/hosted/kubeadm/1.6/calico.yaml
+    environment:
+      KUBECONFIG: /etc/kubernetes/admin.conf
+    when: network_type == "calico"
 
   - name: install kube dashboard
     command: kubectl apply -f https://rawgit.com/kubernetes/dashboard/master/src/deploy/kubernetes-dashboard.yaml
