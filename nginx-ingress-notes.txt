@@ -2,7 +2,7 @@ I'm currently using a quick and dirty nginx-ingress deployment with one replica.
 
 https://rawgit.com/kubernetes/ingress/master/examples/deployment/nginx/kubeadm/nginx-ingress-controller.yaml
 
-The ideal option is to deploy nginx-ingress as a DaemonSet, but I need to set hostNamework: true due to the CNI networking used with kubeadm.
+The ideal option is to deploy nginx-ingress as a DaemonSet, but I need to set hostNetwork: true due to the CNI networking used with kubeadm.
 
 https://rawgit.com/kubernetes/ingress/master/examples/deployment/nginx/default-backend.yaml
 https://rawgit.com/kubernetes/ingress/master/examples/daemonset/nginx/nginx-ingress-daemonset.yaml
