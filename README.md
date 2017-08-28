@@ -4,6 +4,7 @@ Deploy a Kubernetes cluster in Vagrant
 
 ```
 git clone git@github.com:treytabner/vagrant-kube.git
+cd vagrant-kube
 vagrant up
 ```
 

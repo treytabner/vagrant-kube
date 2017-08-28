@@ -3,7 +3,7 @@
   any_errors_fatal: true
   become: yes
   tasks:
-  - name: install docker and kube repo keys
+  - name: install kubernetes repo keys
     rpm_key:
       key: "{{ item }}"
       state: present
@@ -15,11 +15,15 @@
     yum_repository:
       name: kubernetes
       description: Kubernetes
-      baseurl: http://yum.kubernetes.io/repos/kubernetes-el7-x86_64
+      baseurl: https://packages.cloud.google.com/yum/repos/kubernetes-el7-x86_64
       gpgkey: https://packages.cloud.google.com/yum/doc/yum-key.gpg https://packages.cloud.google.com/yum/doc/rpm-package-key.gpg
       gpgcheck: true
       repo_gpgcheck: true
       enabled: true
+
+  - name: update yum package cache for kubernetes repo
+    shell: yum -q makecache -y --disablerepo='*' --enablerepo=kubernetes
+    changed_when: false
 
   - name: install docker and kube packages
     yum:
@@ -125,11 +129,6 @@
 
   - name: install heapster rc
     command: kubectl apply -f https://rawgit.com/kubernetes/heapster/master/deploy/kube-config/standalone/heapster-controller.yaml
-    environment:
-      KUBECONFIG: /etc/kubernetes/admin.conf
-
-  - name: install heapster service
-    command: kubectl apply -f https://rawgit.com/kubernetes/heapster/master/deploy/kube-config/standalone/heapster-service.yaml
     environment:
       KUBECONFIG: /etc/kubernetes/admin.conf
 
