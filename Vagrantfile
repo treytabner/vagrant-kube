@@ -5,7 +5,7 @@
 NUM_NODES = 3
 
 Vagrant.configure("2") do |config|
-  config.vm.box = "centos/7"
+  config.vm.box = "debian/stretch64"
   config.vm.box_check_update = false
   config.vm.synced_folder ".", "/vagrant", disabled: true
 
@@ -24,11 +24,11 @@ Vagrant.configure("2") do |config|
   (1..NUM_NODES).each do |node_id|
     config.vm.define "node#{node_id}" do |node|
       node.vm.hostname = "node#{node_id}"
-      node.vm.network "private_network", ip: "192.168.77.#{20+node_id}", auto_config: false
+      #node.vm.network "private_network", ip: "192.168.77.#{20+node_id}", auto_config: false
 
-      # We don't want to deal with the host-only interface
-      node.vm.provision "shell",
-        inline: "ip route del default dev eth0 || true"
+#      # We don't want to deal with the host-only interface
+#      node.vm.provision "shell",
+#        inline: "ip route del default dev eth0 || true"
 
       # Only execute once the Ansible provisioner,
       # when all the nodes are up and ready.
@@ -42,6 +42,7 @@ Vagrant.configure("2") do |config|
           ansible.limit = "all"
           ansible.verbose = "-vv"
           ansible.playbook = "playbook.yml"
+	  ansible.compatibility_mode = "2.0"
         end
       end
     end
